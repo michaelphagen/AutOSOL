@@ -12,9 +12,9 @@ The EA Desktop preset in Steam Rom Manager is great for launching the game, but 
 
 ## How do I use this?
 
-1. [Download](https://github.com/michaelphagen/Steam-Rom-Manager-Helper/archive/refs/heads/main.zip) or `git clone` this repository
-2. Run `python3 ui.py`
-3. Set your EA Games folder and DRM-Free folders using the Add XX Folder buttons
+1. [Download the latest release from the releases page](https://github.com/michaelphagen/Steam-Rom-Manager-Helper/releases)
+2. Move the executable to a folder you'd like to create the OSOL configs and SRM manifest in
+3. Set your EA Games folder and DRM-Free folders using the "Add EA/DRM-Free Folder" buttons
 4. Click "Scan Folders" to scan for games
 5. Edit any games by double clicking on them in the list
 6. Click Update Manifest to create SRM compatible manifest
