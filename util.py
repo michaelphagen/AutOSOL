@@ -1,13 +1,7 @@
-#Generate a basic UI window
-import PySimpleGUI as sg
-from folder import *
-from osol import *
-from tkinter import *
-from tkinter import ttk
-
+import os
 import json
-
-games=[]
+from osol import *
+from folder import *
 
 def getVars():
    if not os.path.isfile("config.ini"):
@@ -84,8 +78,7 @@ def updateVars(variable,value):
             file.write(filedata)
         return getVars()
 
-
-def getGames(EAGamesPaths):
+def getGames():
     # Get games from current manifest and OSOL inis (when applicable)
     games=[]
     # Get games from current manifest
@@ -110,11 +103,9 @@ def getGames(EAGamesPaths):
     return games
 
 def scan(MonitorFolders,EAGamesPaths,games):
-    if MonitorFolders==[""] and EAGamesPaths==[""]:
-        sg.popup("No Monitor Folder or EA Games Path found, be sure to set it if you want to import games")
-        return games
     if EAGamesPaths!=[""]:
         EAGames=[]
+        EAGamesToRemove=[]
         for EAGamesPath in EAGamesPaths:
             EAGames=EAGames + searchFolder(EAGamesPath,getEAExecutable)
         # If path (startIn) is already in games, remove it
@@ -122,17 +113,20 @@ def scan(MonitorFolders,EAGamesPaths,games):
             game["type"]="OSOL"
             found=False
             for game2 in games:
-                if game["title"]==game2["title"]:
+                if game["title"]==game2["title"] or game["target"]==game2["target"]:
                     found=True
             if found:
                 print(game["title"]+" is already in manifest, not updating it")
-                EAGames.remove(game)
+                EAGamesToRemove.append(game)
             else:
                 print(game["title"]+" is not in manifest, adding it")
                 games.append(game)
+        for game in EAGamesToRemove:
+            EAGames.remove(game)
     if MonitorFolders!=[""]:
         print("Scanning Monitor Folders for DRM-Free games")
         DRMFreeGames=[]
+        DRMFreeGamesToRemove=[]
         for MonitorFolder in MonitorFolders:
             DRMFreeGames=DRMFreeGames + searchFolder(MonitorFolder,searchExe)
         # If path (startIn) is already in games, remove it
@@ -140,14 +134,16 @@ def scan(MonitorFolders,EAGamesPaths,games):
             game["type"]="DRM-Free"
             found=False
             for game2 in games:            
-                if game["title"]==game2["title"]:
+                if game["title"]==game2["title"] or game["target"]==game2["target"]:
                     found=True
             if found:
                 print(game["title"]+" is already in manifest, not updating it")
-                DRMFreeGames.remove(game)
+                DRMFreeGamesToRemove.append(game)
             else:
                 print(game["title"]+" is not in manifest, adding it")
                 games.append(game)
+        for game in DRMFreeGamesToRemove:
+            DRMFreeGames.remove(game)
     # Write new manifest
     return games
 
@@ -163,118 +159,3 @@ def createManifest(games,EADesktopPath):
     with open(os.path.join(os.getcwd(),"manifest.json"), 'w') as file:
         file.write(json.dumps(games))
     return games
-
-def formatData(games):
-    # Format games for display
-    tree_data = sg.TreeData()
-    parents=[]
-    view=[]
-    for game in games:
-        # check if type key exists
-        if "type" not in game:
-            print("Type not found for "+game["title"]+"!")
-        if game["type"] not in parents:
-            parents.append(game["type"])
-            view.append(["",game["type"],game["type"],"",""])
-        view.append([game["type"],game["type"]+"-tag-"+game["title"],game["title"],game["target"],game["startIn"]])
-    for row in view:
-      tree_data.Insert(row[0], row[1], row[2], row[3:])
-    return tree_data
-
-def editGame(games,selection):
-    if "-tag-" not in selection:
-        return
-    title=selection.split("-tag-")[1]
-    type=selection.split("-tag-")[0]
-    game = [game for game in games if game["title"] == title and game["type"]==type][0]
-    # Create windows with title, target, and startIn fields
-    layout = [
-        [sg.Text("Title"), sg.InputText(game["title"], key="title")],
-        [sg.Text("Target"), sg.InputText(game["target"], key="target")],
-        [sg.Text("StartIn"), sg.InputText(game["startIn"], key="startIn")],
-        [sg.Button("Save"), sg.Button("Cancel")]
-    ]
-    window = sg.Window("Edit Game", layout)
-    while True:
-        event, values = window.read()
-        if event == "Save":
-            print("Saving "+values["title"]+" as "+values["target"]+" in "+values["startIn"])
-            game["title"]=values["title"]
-            game["target"]=values["target"]
-            game["startIn"]=values["startIn"]
-            # Replace game in games
-            for i in range(len(games)):
-                if games[i]["title"]==title and games[i]["type"]==type:
-                    games[i]=game
-            window.close()
-            return games
-        if event == "Cancel" or event == sg.WIN_CLOSED:
-            window.close()
-            return games
-
-
-def main():
-    # Get vars from config
-    MonitorFolders,EADesktopPath,EAGamesPaths=getVars()
-    # Get games from current manifest and OSOL inis (when applicable)
-    games=getGames(EAGamesPaths)
-    headings = ['Target','StartIn']
-    layout = [
-        [sg.Stretch(), sg.Text("SRM Helper"), sg.Stretch()],
-        # Here we list the Games we can add to SRM
-        [sg.Stretch(), sg.Text("Games:"), sg.Stretch()],
-        [sg.Tree(
-      data=formatData(games),
-      headings=headings,
-      auto_size_columns=True,
-      select_mode=sg.TABLE_SELECT_MODE_EXTENDED,
-      num_rows=10,
-      key="-GAMELIST-",
-      show_expanded=True,
-      enable_events=True,
-      expand_x=True,
-      expand_y=True
-   )],
-        [sg.Stretch(), sg.Button("Add EA Folder"),sg.Button("Add DRM-Free Folder"), sg.Button("Scan Folders"), sg.Button("Update Manifest"), sg.Stretch()],
-    ]
-    window = sg.Window(
-        "SRM Helper",
-        layout,
-        default_element_size=(12, 1),
-        resizable=True,
-        finalize=True,
-    )  # this is the chang
-    window.bind("<Configure>", "Event")
-    window.bind('<Double-Button-1>', '_double_clicked')
-    while True:
-        event = window.read()
-        if "Add EA Folder" in event:
-            # Create pop up with 2 buttons to add a regular foldedr or an EA folder
-            folder = sg.popup_get_folder("Select an EA Games folder to monitor")
-            if folder:
-                MonitorFolders,EADesktopPath,EAGamesPaths=updateVars("EAGamesPath",folder)
-            if not EADesktopPath:
-                folder = sg.popup_get_folder("Select an EA Desktop folder")
-                if folder:
-                    MonitorFolders,EADesktopPath,EAGamesPaths=updateVars("EADesktopPath",folder)
-        if "Add DRM-Free Folder" in event:
-            # Create pop up with 2 buttons to add a regular foldedr or an EA folder
-            folder = sg.popup_get_folder("Select an DRM-Free Games folder to monitor")
-            if folder:
-                MonitorFolders,EADesktopPath,EAGamesPaths=updateVars("MonitorFolder",folder)
-        if "Scan Folders" in event:
-            games=scan(MonitorFolders,EAGamesPaths,games)
-            window["-GAMELIST-"].update(values=formatData(games))
-        if "Update Manifest" in event:
-            createManifest(games,EADesktopPath)
-        if "_double_clicked" in event:
-            selection=event[1]["-GAMELIST-"][0]
-            games=editGame(games,selection)
-            if games:
-                window["-GAMELIST-"].update(values=formatData(games))
-        if sg.WIN_CLOSED in event:
-            break
-
-
-if __name__ == "__main__":
-    main()
