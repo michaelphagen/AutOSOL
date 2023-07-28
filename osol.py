@@ -2,7 +2,8 @@
 import os
 import xml.etree.ElementTree as ET
 from folder import searchExe
-from util import *
+import urllib.request
+import zipfile
 
 def getEAExecutable(dir,game):
     # Looks for executable matching the title of the game using the _Installer xml, the 
@@ -32,19 +33,52 @@ def getEAExecutable(dir,game):
     else:
         print("No executable found for "+game)
         return False
+    
+def downloadOSOL():
+    # Download OSOL from https://api.github.com/repos/WombatFromHell/OriginSteamOverlayLauncher/releases/latest
+    with urllib.request.urlopen('https://api.github.com/repos/WombatFromHell/OriginSteamOverlayLauncher/releases/latest') as f:
+        #decode as json
+        html = f.read().decode('utf-8')
+    #split by "browser_download_url"
+    html = html.split("browser_download_url")
+    #split by " and take the second part
+    html = html[1].split("\"")
+    #get the url
+    url = html[2]
+    print("Downloading: "+url)
+    #download the file
+    urllib.request.urlretrieve(url, "OSOL.zip")
+    # Unzip OSOL.zip
+    with zipfile.ZipFile("OSOL.zip", 'r') as zip_ref:
+        zip_ref.extractall("OSOL")
+    # Delete OSOL.zip
+    os.remove("OSOL.zip")
+    # Download ini file from https://raw.githubusercontent.com/michaelphagen/Steam-Rom-Manager-Helper/main/OSOL/OriginSteamOverlayLauncher.ini
+    urllib.request.urlretrieve('https://raw.githubusercontent.com/michaelphagen/Steam-Rom-Manager-Helper/main/OSOL/OriginSteamOverlayLauncher.ini',"OriginSteamOverlayLauncher.ini")
+    # Move ini file to OSOL folder
+    os.replace("OriginSteamOverlayLauncher.ini",os.path.join(os.getcwd(),"OSOL","OriginSteamOverlayLauncher.ini"))
 
 def createOSOLConfig(game, EADesktopPath):
-    eaDesktop=os.path.join(EADesktopPath,"EADesktop.exe") 
+    eaDesktop=os.path.join(EADesktopPath,"EADesktop.exe")
+    # Check that EA desktop exe exists
+    if not os.path.isfile(eaDesktop):
+        print("EA Desktop not found!")
+        # Check if it's in EADesktopPath/EA Desktop/EADesktop.exe
+        if os.path.isfile(os.path.join(EADesktopPath,"EA Desktop","EADesktop.exe")):
+            print("EA Desktop found in "+os.path.join(EADesktopPath,"EA Desktop","EADesktop.exe"))
+            eaDesktop=os.path.join(EADesktopPath,"EA Desktop","EADesktop.exe")
     if not os.path.exists(os.path.join(os.getcwd(),"OSOL",game["title"])):
         print("Creating folder: "+os.path.join(os.getcwd(),"OSOL",game["title"]))
         os.makedirs(os.path.join(os.getcwd(),"OSOL",game["title"]))
         # Copy OriginSteamOverlayLauncher.ini from OSOL folder to game folder
-    print("Generating OSOL ini in "+os.path.join(os.getcwd(),"OSOL",game["title"]))
+    if not os.path.isfile(os.path.join(os.getcwd(),"OSOL","OriginSteamOverlayLauncher.ini")):
+        print("OriginSteamOverlayLauncher.ini not found!")
+        downloadOSOL()
     with open(os.path.join(os.getcwd(),"OSOL","OriginSteamOverlayLauncher.ini"), 'r') as file:
         # Confirm OriginSteamOverlayLauncher.exe exits
         if not os.path.isfile(os.path.join(os.getcwd(),"OSOL","OriginSteamOverlayLauncher.exe")):
             print("OriginSteamOverlayLauncher.exe not found!")
-            return False
+            downloadOSOL()
         filedata = file.read()
         # Fill in LauncherPath= with eaDesktop
         filedata = filedata.replace("LauncherPath=", "LauncherPath="+eaDesktop)

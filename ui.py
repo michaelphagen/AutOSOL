@@ -1,7 +1,6 @@
 #Generate a basic UI window
 import PySimpleGUI as sg
 from folder import *
-from util import *
 from osol import *
 from tkinter import *
 from tkinter import ttk
@@ -39,7 +38,9 @@ def getVars():
     return MonitorFolders,EADesktopPath,EAGamesPaths
 
 def updateVars(variable,value):
-    ## THIS NEEDS TO CHECK IF VAR ISD ALREADY IN CONFIG
+    if not os.path.isfile("config.ini"):
+        with open("config.ini", 'w') as file:
+            file.write("MonitorFolders=\nEADesktopPath=\nEAGamesPaths=")
     #open config file to get vars
     with open("config.ini", 'r') as file:
         # Read the file
