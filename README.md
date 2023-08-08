@@ -19,3 +19,9 @@ The EA Desktop preset in Steam Rom Manager is great for launching the game, but 
 5. Edit any games by double clicking on them in the list
 6. Click Update Manifest to create SRM compatible manifest
 7. Import the manifest.json file into Steam Rom Manager as a "Manual" type parser
+
+## Donate
+
+If you find this project useful and you would like to donate toward on-going development you can use the link below. Any and all donations are much appreciated!
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/michaelphagen)
