@@ -8,7 +8,7 @@ This is an applet that will automatically create [OriginSteamOverlayLauncher](ht
 
 ## Why not just use the EA Desktop preset in Steam Rom Manager?
 
-The EA Desktop preset in Steam Rom Manager is great for launching the game, but it doesn't hook the Steam Overlay into the game. This means that Steam Input won't work, nor will Steam Link/Remote Play. OSOL hooks into the game process, but setting it up can take a while if you have a lot of games installed. This script automates that process. It also doesn't support importing games from a folder, like itch.io or Amazon Games (previously Twitch Games) which are DRM free.
+The EA Desktop preset in Steam Rom Manager is great for launching the game, but it doesn't hook the Steam Overlay into the game. This means that Steam Input won't work, nor will Steam Link/Remote Play. OSOL hooks into the game process, but setting it up can take a while if you have a lot of games installed. This script automates that process. It also supports importing games from a folder, like itch.io or Amazon Games (previously Twitch Games) which are DRM free.
 
 ## How do I use this?
 
